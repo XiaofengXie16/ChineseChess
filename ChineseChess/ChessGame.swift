@@ -183,6 +183,9 @@ class ChessGame: ObservableObject {
                     withAnimation(.easeInOut(duration: 0.22)) {
                         self.executeMove(livePiece, to: to)
                     }
+                } else {
+                    // AI has no legal moves — it loses
+                    self.gameStatus = .checkmate(self.aiSide)
                 }
             }
         }
