@@ -91,6 +91,8 @@ struct SidebarView: View {
                 Button(action: {
                     if case .checkmate(let loser) = game.gameStatus {
                         if loser == .red { blackWins += 1 } else { redWins += 1 }
+                    } else if case .repetition(let loser) = game.gameStatus {
+                        if loser == .red { blackWins += 1 } else { redWins += 1 }
                     }
                     withAnimation { game.newGame() }
                 }) {
@@ -278,13 +280,18 @@ struct BoardAreaView: View {
 
             // Game over overlay
             if case .checkmate(let loser) = game.gameStatus {
-                GameOverOverlay(winner: loser.opponent, game: game,
+                GameOverOverlay(winner: loser.opponent, isRepetition: false, game: game,
+                                redWins: $redWins, blackWins: $blackWins)
+                    .transition(.opacity.combined(with: .scale(scale: 0.94)))
+            } else if case .repetition(let loser) = game.gameStatus {
+                GameOverOverlay(winner: loser.opponent, isRepetition: true, game: game,
                                 redWins: $redWins, blackWins: $blackWins)
                     .transition(.opacity.combined(with: .scale(scale: 0.94)))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: {
             if case .checkmate = game.gameStatus { return true }
+            if case .repetition = game.gameStatus { return true }
             return false
         }())
         .clipped()
@@ -329,6 +336,7 @@ struct TurnPill: View {
     private var pillText: String {
         switch game.gameStatus {
         case .check(let s): return s == .red ? "红方将军！" : "黑方将军！"
+        case .repetition(let loser): return loser == .red ? "长将！红方负" : "长将！黑方负"
         default:
             if game.isAIThinking { return "AI 思考中..." }
             return game.currentTurn == .red ? "红方走棋" : "黑方走棋"
@@ -340,6 +348,7 @@ struct TurnPill: View {
 
 struct GameOverOverlay: View {
     let winner: Side
+    let isRepetition: Bool
     @ObservedObject var game: ChessGame
     @Binding var redWins: Int
     @Binding var blackWins: Int
@@ -367,9 +376,15 @@ struct GameOverOverlay: View {
                     Text(winner == .red ? "红方胜利！" : "黑方胜利！")
                         .font(.system(size: 26, weight: .black, design: .serif))
                         .foregroundColor(.white)
-                    Text(winner == game.playerSide ? "恭喜你赢了！" : "电脑赢了，再来一局！")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.6))
+                    if isRepetition {
+                        Text("长将违规，对方判负")
+                            .font(.system(size: 14))
+                            .foregroundColor(.orange.opacity(0.85))
+                    } else {
+                        Text(winner == game.playerSide ? "恭喜你赢了！" : "电脑赢了，再来一局！")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
 
                 Button(action: {

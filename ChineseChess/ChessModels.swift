@@ -75,4 +75,5 @@ enum GameStatus {
     case check(Side)
     case checkmate(Side)   // side that LOST
     case stalemate         // draw — no legal moves but not in check (rare in Xiangqi, treated as loss)
+    case repetition(Side)  // side that LOST due to perpetual check (same position 3 times)
 }

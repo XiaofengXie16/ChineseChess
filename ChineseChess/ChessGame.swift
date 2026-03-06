@@ -17,6 +17,8 @@ class ChessGame: ObservableObject {
     let playerSide: Side = .red   // Human always plays Red
     var aiSide: Side { playerSide.opponent }
 
+    private var positionCounts: [String: Int] = [:]
+
     // MARK: - Init
 
     init() { setupBoard() }
@@ -32,6 +34,7 @@ class ChessGame: ObservableObject {
         lastMove = nil
         moveHistory = []
         isAIThinking = false
+        positionCounts = [:]
         loadInitialPieces()
     }
 
@@ -103,6 +106,7 @@ class ChessGame: ObservableObject {
 
     func executeMove(_ piece: ChessPiece, to pos: Position) {
         let from = piece.position
+        let moverSide = currentTurn
         let captured = self.piece(at: pos)
 
         moveHistory.append(MoveRecord(pieceId: piece.id, from: from, to: pos, capturedPiece: captured))
@@ -119,6 +123,14 @@ class ChessGame: ObservableObject {
         validMoves = []
         currentTurn = currentTurn.opponent
 
+        // Check three-fold repetition before refreshing status
+        let hash = boardStateHash()
+        positionCounts[hash, default: 0] += 1
+        if positionCounts[hash]! >= 3 {
+            gameStatus = .repetition(moverSide)
+            return
+        }
+
         refreshGameStatus()
 
         // Trigger AI if game still going
@@ -126,6 +138,17 @@ class ChessGame: ObservableObject {
         case .playing, .check: triggerAIIfNeeded()
         default: break
         }
+    }
+
+    private func boardStateHash() -> String {
+        let pieceStr = pieces
+            .sorted {
+                if $0.position.row != $1.position.row { return $0.position.row < $1.position.row }
+                return $0.position.col < $1.position.col
+            }
+            .map { "\($0.side == .red ? "R" : "B")\($0.chineseChar)\($0.position.col)\($0.position.row)" }
+            .joined()
+        return "\(currentTurn == .red ? "R" : "B")|\(pieceStr)"
     }
 
     // MARK: - Undo
@@ -148,6 +171,7 @@ class ChessGame: ObservableObject {
         lastMove = moveHistory.last.map { (from: $0.from, to: $0.to) }
         selectedPiece = nil
         validMoves = []
+        positionCounts = [:]
         refreshGameStatus()
     }
 
