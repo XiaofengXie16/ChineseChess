@@ -75,10 +75,6 @@ struct SidebarView: View {
             .padding(.horizontal, 14)
             .padding(.top, 16)
 
-            Spacer()
-
-            Divider().background(Color.white.opacity(0.08)).padding(.horizontal, 12)
-
             // Buttons
             VStack(spacing: 8) {
                 Button(action: { withAnimation(.easeInOut(duration: 0.18)) { game.undoMove() } }) {
@@ -218,7 +214,7 @@ struct BoardAreaView: View {
 
     // Compute cell size to fill available space
     private var cs: CGFloat {
-        let hPad: CGFloat = 60   // left (row labels) + right padding
+        let hPad: CGFloat = 80   // left (row labels) + right padding
         let vPad: CGFloat = 90   // top (turn pill) + bottom padding
         let maxByW = (availableSize.width - hPad) / 10
         let maxByH = (availableSize.height - vPad) / 11
